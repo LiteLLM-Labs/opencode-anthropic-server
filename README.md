@@ -226,7 +226,7 @@ Server-Sent Events. Frames are `event: <type>\ndata: <json>\n\n`. Anthropic even
 | Event | Data |
 | --- | --- |
 | `agent.message` | `{content:[{type:"text",text}], model}` |
-| `agent.thinking` | reasoning delta |
+| `agent.thinking` | `{thinking, content:[{type:"thinking",text}], model}` |
 | `agent.tool_use` | tool call |
 | `agent.tool_result` | tool result |
 | `session.status_running` | session became active |

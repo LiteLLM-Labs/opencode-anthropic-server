@@ -99,6 +99,8 @@ export function translateOpencodeEvent(raw, ctx) {
     // skipped: it fires for the echoed user message and again as the final
     // assistant duplicate, so emitting it would double-send and echo input.
     case "message.part.delta": {
+      const thinking = thinkingText(props);
+      if (thinking) return thinkingEvent(thinking, ctx.model);
       const text =
         props.delta?.text ||
         (typeof props.delta === "string" ? props.delta : "") ||
@@ -127,6 +129,16 @@ export function translateOpencodeEvent(raw, ctx) {
         };
       }
       return null;
+    }
+    case "agent.thinking":
+    case "agent.reasoning":
+    case "thinking":
+    case "thinking_delta":
+    case "reasoning":
+    case "reasoning-delta": {
+      const thinking = thinkingText(props, { allowBareDelta: true });
+      if (!thinking) return null;
+      return thinkingEvent(thinking, ctx.model);
     }
     case "session.status": {
       const status = props.status?.type;
@@ -170,4 +182,33 @@ export function translateOpencodeEvent(raw, ctx) {
       return null;
     }
   }
+}
+
+function thinkingText(props, { allowBareDelta = false } = {}) {
+  const partType = props.part?.type;
+  const isThinkingPart = partType === "thinking" || partType === "reasoning";
+  return (
+    props.text ||
+    props.thinking ||
+    props.reasoning ||
+    props.delta?.thinking ||
+    props.delta?.reasoning ||
+    (isThinkingPart && props.delta?.text) ||
+    (isThinkingPart && typeof props.delta === "string" ? props.delta : "") ||
+    (allowBareDelta && typeof props.delta === "string" ? props.delta : "") ||
+    props.part?.thinking ||
+    props.part?.reasoning ||
+    ""
+  );
+}
+
+function thinkingEvent(thinking, model) {
+  return {
+    event: "agent.thinking",
+    data: {
+      thinking,
+      content: [{ type: "thinking", text: thinking }],
+      model: model || null,
+    },
+  };
 }
