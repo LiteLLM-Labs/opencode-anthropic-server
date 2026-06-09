@@ -1,10 +1,11 @@
 services:
   - type: web
-    name: opencode-anthropic-server
+    name: opencode-agent-server
     runtime: docker
+    rootDir: templates/opencode
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
-    autoDeploy: true
+    autoDeploy: false
     envVars:
       - key: PORT
         value: "8080"
@@ -14,14 +15,6 @@ services:
         value: /tmp/opencode-workspace
       - key: DB_PATH
         value: /var/data/agents.db
-      # Set these in the Render dashboard (secret): route models through a
-      # LiteLLM gateway. Without them, set ANTHROPIC_API_KEY instead.
-      - key: LITELLM_BASE_URL
-        sync: false
-      - key: LITELLM_API_KEY
-        sync: false
-      - key: LITELLM_MODELS
-        value: claude-sonnet-4-5
     disk:
       name: opencode-data
       mountPath: /var/data
