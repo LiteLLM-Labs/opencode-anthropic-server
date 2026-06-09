@@ -97,6 +97,105 @@ test("reasoning delta strings translate to agent.thinking", () => {
   );
 });
 
+test("pending tool updates include stable id and name without empty input", () => {
+  assert.deepEqual(
+    translateOpencodeEvent(
+      {
+        type: "message.part.updated",
+        properties: {
+          sessionID: "ses_123",
+          part: {
+            id: "part_tool_1",
+            type: "tool",
+            tool: "sandbox_exec",
+            state: {
+              status: "pending",
+              input: {},
+            },
+          },
+        },
+      },
+      ctx,
+    ),
+    {
+      event: "agent.tool_use",
+      data: {
+        id: "part_tool_1",
+        name: "sandbox_exec",
+        tool: "sandbox_exec",
+        status: "pending",
+      },
+    },
+  );
+});
+
+test("running tool updates include the current input", () => {
+  assert.deepEqual(
+    translateOpencodeEvent(
+      {
+        type: "message.part.updated",
+        properties: {
+          sessionID: "ses_123",
+          part: {
+            id: "part_tool_1",
+            type: "tool",
+            tool: "sandbox_exec",
+            state: {
+              status: "running",
+              input: { command: "echo \"hello world\"" },
+            },
+          },
+        },
+      },
+      ctx,
+    ),
+    {
+      event: "agent.tool_use",
+      data: {
+        id: "part_tool_1",
+        name: "sandbox_exec",
+        tool: "sandbox_exec",
+        input: { command: "echo \"hello world\"" },
+        status: "running",
+      },
+    },
+  );
+});
+
+test("completed tool updates translate to agent.tool_result with output", () => {
+  assert.deepEqual(
+    translateOpencodeEvent(
+      {
+        type: "message.part.updated",
+        properties: {
+          sessionID: "ses_123",
+          part: {
+            id: "part_tool_1",
+            type: "tool",
+            tool: "sandbox_exec",
+            state: {
+              status: "completed",
+              input: { command: "echo \"hello world\"" },
+              output: "hello world\n",
+            },
+          },
+        },
+      },
+      ctx,
+    ),
+    {
+      event: "agent.tool_result",
+      data: {
+        tool_use_id: "part_tool_1",
+        name: "sandbox_exec",
+        tool: "sandbox_exec",
+        content: [{ type: "text", text: "hello world\n" }],
+        output: "hello world\n",
+      },
+    },
+  );
+});
+
 test("events for another session are dropped", () => {
   assert.equal(
     translateOpencodeEvent(
